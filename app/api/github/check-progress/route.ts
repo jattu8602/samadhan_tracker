@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
+// Force dynamic rendering for Vercel
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET /api/github/check-progress - Check GitHub repository for task completion
 export async function GET(request: NextRequest) {
   try {
