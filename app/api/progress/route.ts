@@ -6,14 +6,6 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-interface UserData {
-  id: string
-  firstName: string | null
-  lastName: string | null
-  email: string
-  imageUrl: string | null
-}
-
 interface DayProgressData {
   dayNumber: number
   title: string
