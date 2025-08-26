@@ -1,10 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering for Vercel
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+
+interface UserData {
+  id: string
+  firstName: string | null
+  lastName: string | null
+  email: string
+  imageUrl: string | null
+}
+
+interface TaskData {
+  dayNumber: number
+  title: string
+  description: string | null
+  isCompleted: boolean
+  user: UserData
+}
+
+interface DayProgressData {
+  dayNumber: number
+  title: string
+  description: string | null
+  totalUsers: number
+  completedUsers: number
+  inProgressUsers: number
+  users: Array<{
+    id: string
+    firstName: string | null
+    lastName: string | null
+    email: string
+    imageUrl: string | null
+    isCompleted: boolean
+    taskId: string
+  }>
+}
 
 // GET /api/progress - Get global progress for all users
 export async function GET() {
@@ -66,8 +100,8 @@ export async function GET() {
 
       acc[day].users.push({
         id: task.user.id,
-        firstName: task.user.firstName || 'Anonymous',
-        lastName: task.user.lastName || '',
+        firstName: task.user.firstName,
+        lastName: task.user.lastName,
         email: task.user.email,
         imageUrl: task.user.imageUrl,
         isCompleted: task.isCompleted,
@@ -75,11 +109,11 @@ export async function GET() {
       })
 
       return acc
-    }, {} as Record<number, any>)
+    }, {} as Record<number, DayProgressData>)
 
     // Convert to array and sort by day
     const progressData = Object.values(tasksByDay).sort(
-      (a: any, b: any) => a.dayNumber - b.dayNumber
+      (a, b) => a.dayNumber - b.dayNumber
     )
 
     return NextResponse.json({

@@ -1,7 +1,7 @@
 'use client'
 
-import { useUser, SignInButton, SignOutButton } from '@clerk/nextjs'
-import { useState, useEffect } from 'react'
+import { useUser, SignOutButton } from '@clerk/nextjs'
+import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle,
   Circle,
@@ -23,6 +23,17 @@ interface Task {
   dayNumber: number
   isCompleted: boolean
   githubUrl: string
+}
+
+interface ProgressData {
+  progressByDay: Array<{
+    dayNumber: number
+    users: Array<{
+      firstName: string | null
+      email: string
+      isCompleted: boolean
+    }>
+  }>
 }
 
 const TASK_LIST = [
@@ -144,14 +155,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'personal' | 'global'>('personal')
   const { showNotification } = useNotifications()
 
-  useEffect(() => {
-    if (isSignedIn && user) {
-      loadUserTasks()
-      loadOtherUserTasks()
-    }
-  }, [isSignedIn, user])
-
-  const loadUserTasks = async () => {
+  const loadUserTasks = useCallback(async () => {
     setLoading(true)
     try {
       console.log('Fetching tasks from API...')
@@ -173,25 +177,32 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [showNotification])
 
-  const loadOtherUserTasks = async () => {
+  const loadOtherUserTasks = useCallback(async () => {
     try {
       const response = await fetch('/api/progress')
       if (response.ok) {
-        const data = await response.json()
+        const data: ProgressData = await response.json()
         // Get day numbers that are already selected by other users
         const otherDays = new Set<number>(
           data.progressByDay
-            .filter((day: any) => day.users.length > 0)
-            .map((day: any) => day.dayNumber)
+            .filter((day) => day.users.length > 0)
+            .map((day) => day.dayNumber)
         )
         setOtherUserTasks(otherDays)
       }
     } catch (error) {
       console.error('Error loading other user tasks:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (isSignedIn && user) {
+      loadUserTasks()
+      loadOtherUserTasks()
+    }
+  }, [isSignedIn, user, loadUserTasks, loadOtherUserTasks])
 
   const addTask = async (dayNumber: number) => {
     if (selectedTasks.length >= 7) {

@@ -5,10 +5,10 @@ import {
   Users,
   CheckCircle,
   Circle,
-  TrendingUp,
   Trophy,
   Target,
 } from 'lucide-react'
+import Image from 'next/image'
 
 interface User {
   id: string
@@ -235,10 +235,12 @@ export default function GlobalProgressDashboard() {
                       >
                         <div className="flex-shrink-0">
                           {user.imageUrl ? (
-                            <img
+                            <Image
                               src={user.imageUrl}
                               alt={`${user.firstName} ${user.lastName}`}
-                              className="w-8 h-8 rounded-full"
+                              width={32}
+                              height={32}
+                              className="rounded-full"
                             />
                           ) : (
                             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">

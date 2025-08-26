@@ -44,7 +44,7 @@ export default function ProgressDashboard({ tasks }: ProgressDashboardProps) {
 
   useEffect(() => {
     loadOtherUserTasks()
-  }, [])
+  }, [tasks]) // Add tasks as dependency
 
   const loadOtherUserTasks = async () => {
     setLoadingOthers(true)
@@ -55,15 +55,35 @@ export default function ProgressDashboard({ tasks }: ProgressDashboardProps) {
         // Get tasks that are not selected by current user
         const currentUserDayNumbers = tasks.map((t) => t.dayNumber)
         const otherTasks = data.progressByDay
-          .filter((day: any) => !currentUserDayNumbers.includes(day.dayNumber))
-          .map((day: any) => ({
-            dayNumber: day.dayNumber,
-            title: day.title,
-            description: day.description,
-            userName: day.users[0]?.firstName || 'Anonymous',
-            userEmail: day.users[0]?.email || '',
-            isCompleted: day.users[0]?.isCompleted || false,
-          }))
+          .filter(
+            (day: {
+              dayNumber: number
+              users: Array<{
+                firstName: string | null
+                email: string
+                isCompleted: boolean
+              }>
+            }) => !currentUserDayNumbers.includes(day.dayNumber)
+          )
+          .map(
+            (day: {
+              dayNumber: number
+              title: string
+              description: string | null
+              users: Array<{
+                firstName: string | null
+                email: string
+                isCompleted: boolean
+              }>
+            }) => ({
+              dayNumber: day.dayNumber,
+              title: day.title,
+              description: day.description || '',
+              userName: day.users[0]?.firstName || 'Anonymous',
+              userEmail: day.users[0]?.email || '',
+              isCompleted: day.users[0]?.isCompleted || false,
+            })
+          )
         setOtherUserTasks(otherTasks)
       }
     } catch (error) {
