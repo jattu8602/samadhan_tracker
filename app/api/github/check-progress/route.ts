@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const repoOwner = process.env.GITHUB_REPO_OWNER || 'taniyaapatel'
-    const repoName = process.env.GITHUB_REPO_NAME || 'Samadhan'
+    const repoOwner = process.env.GITHUB_REPO_OWNER
+    const repoName = process.env.GITHUB_REPO_NAME 
     const githubToken = process.env.GITHUB_TOKEN
 
     if (!githubToken) {
