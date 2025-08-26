@@ -52,8 +52,8 @@ DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/database?retry
 
 # GitHub Integration
 GITHUB_TOKEN=your_github_personal_access_token
-GITHUB_REPO_OWNER=taniyaapatel
-GITHUB_REPO_NAME=Samadhan
+GITHUB_REPO_OWNER=team_leader's_github_name
+GITHUB_REPO_NAME=repo_name
 ```
 
 ### 3. Database Setup
