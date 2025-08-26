@@ -7,7 +7,9 @@ import {
   Target,
   Award,
   Calendar,
+  Users,
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 interface Task {
   id: string
@@ -18,15 +20,58 @@ interface Task {
   githubUrl: string
 }
 
+interface OtherUserTask {
+  dayNumber: number
+  title: string
+  description: string
+  userName: string
+  userEmail: string
+  isCompleted: boolean
+}
+
 interface ProgressDashboardProps {
   tasks: Task[]
 }
 
 export default function ProgressDashboard({ tasks }: ProgressDashboardProps) {
+  const [otherUserTasks, setOtherUserTasks] = useState<OtherUserTask[]>([])
+  const [loadingOthers, setLoadingOthers] = useState(false)
+
   const completedTasks = tasks.filter((task) => task.isCompleted)
   const totalTasks = tasks.length
   const completionPercentage =
     totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0
+
+  useEffect(() => {
+    loadOtherUserTasks()
+  }, [])
+
+  const loadOtherUserTasks = async () => {
+    setLoadingOthers(true)
+    try {
+      const response = await fetch('/api/progress')
+      if (response.ok) {
+        const data = await response.json()
+        // Get tasks that are not selected by current user
+        const currentUserDayNumbers = tasks.map((t) => t.dayNumber)
+        const otherTasks = data.progressByDay
+          .filter((day: any) => !currentUserDayNumbers.includes(day.dayNumber))
+          .map((day: any) => ({
+            dayNumber: day.dayNumber,
+            title: day.title,
+            description: day.description,
+            userName: day.users[0]?.firstName || 'Anonymous',
+            userEmail: day.users[0]?.email || '',
+            isCompleted: day.users[0]?.isCompleted || false,
+          }))
+        setOtherUserTasks(otherTasks)
+      }
+    } catch (error) {
+      console.error('Error loading other user tasks:', error)
+    } finally {
+      setLoadingOthers(false)
+    }
+  }
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-600'
@@ -185,7 +230,7 @@ export default function ProgressDashboard({ tasks }: ProgressDashboardProps) {
       )}
 
       {/* Recent Activity */}
-      <div>
+      <div className="mb-6">
         <h4 className="text-md font-medium text-gray-800 mb-3 flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-blue-600" />
           Recent Activity
@@ -218,6 +263,62 @@ export default function ProgressDashboard({ tasks }: ProgressDashboardProps) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Tasks Selected by Other Users */}
+      <div>
+        <h4 className="text-md font-medium text-gray-800 mb-3 flex items-center gap-2">
+          <Users className="h-4 w-4 text-orange-600" />
+          Tasks Selected by Others
+        </h4>
+        {loadingOthers ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : otherUserTasks.length > 0 ? (
+          <div className="space-y-3">
+            {otherUserTasks.slice(0, 5).map((task) => (
+              <div
+                key={task.dayNumber}
+                className="p-3 bg-orange-50 rounded-lg border border-orange-200"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-orange-800">
+                    Day {task.dayNumber.toString().padStart(2, '0')}:{' '}
+                    {task.title}
+                  </span>
+                  {task.isCompleted ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-orange-500" />
+                  )}
+                </div>
+                <p className="text-xs text-orange-700 mb-2">
+                  {task.description}
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 bg-orange-200 rounded-full flex items-center justify-center">
+                    <span className="text-xs text-orange-700 font-medium">
+                      {task.userName.charAt(0)}
+                    </span>
+                  </div>
+                  <span className="text-xs text-orange-600">
+                    {task.userName} {task.userEmail && `(${task.userEmail})`}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 text-center py-2">
+            No other tasks selected yet
+          </p>
+        )}
       </div>
 
       {/* Motivation Message */}

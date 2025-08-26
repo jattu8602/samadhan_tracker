@@ -250,7 +250,11 @@ export default function GlobalProgressDashboard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-800 truncate">
-                            {user.firstName} {user.lastName}
+                            {user.firstName && user.lastName
+                              ? `${user.firstName} ${user.lastName}`
+                              : user.firstName ||
+                                user.email.split('@')[0] ||
+                                'Anonymous'}
                           </p>
                           <p className="text-xs text-gray-500 truncate">
                             {user.email}

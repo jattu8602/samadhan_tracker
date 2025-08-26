@@ -139,6 +139,7 @@ const TASK_LIST = [
 export default function Home() {
   const { user, isSignedIn } = useUser()
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([])
+  const [otherUserTasks, setOtherUserTasks] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'personal' | 'global'>('personal')
   const { showNotification } = useNotifications()
@@ -146,6 +147,7 @@ export default function Home() {
   useEffect(() => {
     if (isSignedIn && user) {
       loadUserTasks()
+      loadOtherUserTasks()
     }
   }, [isSignedIn, user])
 
@@ -170,6 +172,24 @@ export default function Home() {
       showNotification('error', 'Network error loading tasks')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadOtherUserTasks = async () => {
+    try {
+      const response = await fetch('/api/progress')
+      if (response.ok) {
+        const data = await response.json()
+        // Get day numbers that are already selected by other users
+        const otherDays = new Set<number>(
+          data.progressByDay
+            .filter((day: any) => day.users.length > 0)
+            .map((day: any) => day.dayNumber)
+        )
+        setOtherUserTasks(otherDays)
+      }
+    } catch (error) {
+      console.error('Error loading other user tasks:', error)
     }
   }
 
@@ -202,6 +222,8 @@ export default function Home() {
       if (response.ok) {
         const savedTask = await response.json()
         setSelectedTasks([...selectedTasks, savedTask])
+        // Refresh other user tasks to update the UI
+        loadOtherUserTasks()
         showNotification(
           'success',
           `Task "${taskData.title}" added successfully!`
@@ -225,6 +247,8 @@ export default function Home() {
       if (response.ok) {
         const taskToRemove = selectedTasks.find((t) => t.id === taskId)
         setSelectedTasks(selectedTasks.filter((t) => t.id !== taskId))
+        // Refresh other user tasks to update the UI
+        loadOtherUserTasks()
         showNotification(
           'success',
           `Task "${taskToRemove?.title}" removed successfully!`
@@ -439,6 +463,7 @@ export default function Home() {
                     (t) => t.dayNumber === task.day
                   )
                   const isDisabled = !isSelected && selectedTasks.length >= 7
+                  const isOtherUserSelected = otherUserTasks.has(task.day)
 
                   return (
                     <div
@@ -455,9 +480,17 @@ export default function Home() {
                         <h3 className="font-semibold text-gray-800">
                           Day {task.day.toString().padStart(2, '0')}
                         </h3>
-                        {isSelected && (
-                          <CheckCircle className="text-blue-500" size={20} />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {isSelected && (
+                            <CheckCircle className="text-blue-500" size={20} />
+                          )}
+                          {isOtherUserSelected && !isSelected && (
+                            <div className="flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
+                              <Users className="h-3 w-3" />
+                              Taken
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <h4 className="font-medium text-gray-700 mb-2">
                         {task.title}
@@ -467,12 +500,16 @@ export default function Home() {
                       </p>
                       <button
                         onClick={() => addTask(task.day)}
-                        disabled={isSelected || isDisabled}
+                        disabled={
+                          isSelected || isDisabled || isOtherUserSelected
+                        }
                         className={`w-full py-2 px-4 rounded-lg transition-colors ${
                           isSelected
                             ? 'bg-blue-100 text-blue-700 cursor-not-allowed'
                             : isDisabled
                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : isOtherUserSelected
+                            ? 'bg-orange-100 text-orange-700 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
                       >
@@ -480,6 +517,8 @@ export default function Home() {
                           ? 'Selected'
                           : isDisabled
                           ? 'Max Tasks Reached'
+                          : isOtherUserSelected
+                          ? 'Already Taken'
                           : 'Add Task'}
                       </button>
                     </div>
