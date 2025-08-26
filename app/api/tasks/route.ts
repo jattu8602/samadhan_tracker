@@ -9,9 +9,13 @@ export const runtime = 'nodejs'
 // GET /api/tasks - Get all tasks for the authenticated user
 export async function GET() {
   try {
+    console.log('GET /api/tasks - Starting request')
+
     const { userId } = await auth()
+    console.log('Auth result - userId:', userId)
 
     if (!userId) {
+      console.log('No userId found, returning 401')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,8 +23,10 @@ export async function GET() {
     let user = await prisma.user.findUnique({
       where: { clerkId: userId },
     })
+    console.log('User lookup result:', user ? 'Found' : 'Not found')
 
     if (!user) {
+      console.log('Creating new user for clerkId:', userId)
       // For now, create user with basic info from userId
       user = await prisma.user.create({
         data: {
@@ -31,18 +37,23 @@ export async function GET() {
           imageUrl: '',
         },
       })
+      console.log('New user created:', user.id)
     }
 
     const tasks = await prisma.task.findMany({
       where: { userId: user.id },
       orderBy: { dayNumber: 'asc' },
     })
+    console.log('Tasks found:', tasks.length)
 
     return NextResponse.json(tasks)
   } catch (error) {
     console.error('Error fetching tasks:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     )
   }

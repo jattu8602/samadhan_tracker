@@ -142,13 +142,22 @@ export default function Home() {
   const loadUserTasks = async () => {
     setLoading(true)
     try {
+      console.log('Fetching tasks from API...')
       const response = await fetch('/api/tasks')
+      console.log('API Response status:', response.status)
+
       if (response.ok) {
         const tasks = await response.json()
+        console.log('Tasks loaded:', tasks)
         setSelectedTasks(tasks)
+      } else {
+        const errorText = await response.text()
+        console.error('API Error:', response.status, errorText)
+        showNotification('error', `Failed to load tasks: ${response.status}`)
       }
     } catch (error) {
       console.error('Error loading tasks:', error)
+      showNotification('error', 'Network error loading tasks')
     } finally {
       setLoading(false)
     }
