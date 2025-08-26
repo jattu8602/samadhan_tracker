@@ -14,14 +14,6 @@ interface UserData {
   imageUrl: string | null
 }
 
-interface TaskData {
-  dayNumber: number
-  title: string
-  description: string | null
-  isCompleted: boolean
-  user: UserData
-}
-
 interface DayProgressData {
   dayNumber: number
   title: string
