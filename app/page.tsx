@@ -2,9 +2,18 @@
 
 import { useUser, SignInButton, SignOutButton } from '@clerk/nextjs'
 import { useState, useEffect } from 'react'
-import { CheckCircle, Circle, Github, Trash2 } from 'lucide-react'
+import {
+  CheckCircle,
+  Circle,
+  Github,
+  Trash2,
+  Users,
+  BarChart3,
+} from 'lucide-react'
 import ProgressDashboard from './components/ProgressDashboard'
+import GlobalProgressDashboard from './components/GlobalProgressDashboard'
 import LoadingSpinner from './components/LoadingSpinner'
+import LoginPage from './components/LoginPage'
 import { useNotifications } from './contexts/NotificationContext'
 
 interface Task {
@@ -131,6 +140,7 @@ export default function Home() {
   const { user, isSignedIn } = useUser()
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'personal' | 'global'>('personal')
   const { showNotification } = useNotifications()
 
   useEffect(() => {
@@ -265,23 +275,7 @@ export default function Home() {
   }
 
   if (!isSignedIn) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md w-full mx-4">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            Samadhan Tracker
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Track your learning progress with GitHub integration
-          </p>
-          <SignInButton mode="modal">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
-              Sign In to Continue
-            </button>
-          </SignInButton>
-        </div>
-      </div>
-    )
+    return <LoginPage />
   }
 
   return (
@@ -312,35 +306,158 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Progress Dashboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <div className="lg:col-span-2">
-            {/* Selected Tasks */}
-            {loading ? (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <LoadingSpinner />
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-lg shadow-lg p-2 mb-8">
+          <div className="flex space-x-1">
+            <button
+              onClick={() => setActiveTab('personal')}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                activeTab === 'personal'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Personal Progress
               </div>
-            ) : selectedTasks.length > 0 ? (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  Your Selected Tasks
-                </h2>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {selectedTasks.map((task) => (
+            </button>
+            <button
+              onClick={() => setActiveTab('global')}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                activeTab === 'global'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Users className="h-5 w-5" />
+                Community Progress
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Content based on active tab */}
+        {activeTab === 'personal' ? (
+          <>
+            {/* Progress Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+              <div className="lg:col-span-2">
+                {/* Selected Tasks */}
+                {loading ? (
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <LoadingSpinner />
+                  </div>
+                ) : selectedTasks.length > 0 ? (
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                      Your Selected Tasks
+                    </h2>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {selectedTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-semibold text-gray-800">
+                              Day {task.dayNumber.toString().padStart(2, '0')}
+                            </h3>
+                            <button
+                              onClick={() => removeTask(task.id)}
+                              className="text-red-500 hover:text-red-700 p-1"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          <h4 className="font-medium text-gray-700 mb-2">
+                            {task.title}
+                          </h4>
+                          <p className="text-sm text-gray-600 mb-3">
+                            {task.description}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <button
+                              onClick={() => toggleTaskCompletion(task.id)}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              {task.isCompleted ? (
+                                <CheckCircle
+                                  className="text-green-500"
+                                  size={20}
+                                />
+                              ) : (
+                                <Circle className="text-gray-400" size={20} />
+                              )}
+                              {task.isCompleted ? 'Completed' : 'Mark Complete'}
+                            </button>
+                            <a
+                              href={task.githubUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                            >
+                              <Github size={16} />
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow-lg p-6 text-center py-12">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                      No Tasks Selected
+                    </h2>
+                    <p className="text-gray-600 mb-6">
+                      Select up to 7 tasks from the list below to start tracking
+                      your progress
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress Dashboard Sidebar */}
+              <div className="lg:col-span-1">
+                <ProgressDashboard tasks={selectedTasks} />
+              </div>
+            </div>
+
+            {/* Available Tasks */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                Available Tasks
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Select up to 7 tasks to track your progress
+              </p>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {TASK_LIST.map((task) => {
+                  const isSelected = selectedTasks.some(
+                    (t) => t.dayNumber === task.day
+                  )
+                  const isDisabled = !isSelected && selectedTasks.length >= 7
+
+                  return (
                     <div
-                      key={task.id}
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                      key={task.day}
+                      className={`border rounded-lg p-4 transition-all ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50'
+                          : isDisabled
+                          ? 'border-gray-200 bg-gray-50 opacity-60'
+                          : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="font-semibold text-gray-800">
-                          Day {task.dayNumber.toString().padStart(2, '0')}
+                          Day {task.day.toString().padStart(2, '0')}
                         </h3>
-                        <button
-                          onClick={() => removeTask(task.id)}
-                          className="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {isSelected && (
+                          <CheckCircle className="text-blue-500" size={20} />
+                        )}
                       </div>
                       <h4 className="font-medium text-gray-700 mb-2">
                         {task.title}
@@ -348,113 +465,35 @@ export default function Home() {
                       <p className="text-sm text-gray-600 mb-3">
                         {task.description}
                       </p>
-                      <div className="flex items-center justify-between">
-                        <button
-                          onClick={() => toggleTaskCompletion(task.id)}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          {task.isCompleted ? (
-                            <CheckCircle className="text-green-500" size={20} />
-                          ) : (
-                            <Circle className="text-gray-400" size={20} />
-                          )}
-                          {task.isCompleted ? 'Completed' : 'Mark Complete'}
-                        </button>
-                        <a
-                          href={task.githubUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                        >
-                          <Github size={16} />
-                          View
-                        </a>
-                      </div>
+                      <button
+                        onClick={() => addTask(task.day)}
+                        disabled={isSelected || isDisabled}
+                        className={`w-full py-2 px-4 rounded-lg transition-colors ${
+                          isSelected
+                            ? 'bg-blue-100 text-blue-700 cursor-not-allowed'
+                            : isDisabled
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                      >
+                        {isSelected
+                          ? 'Selected'
+                          : isDisabled
+                          ? 'Max Tasks Reached'
+                          : 'Add Task'}
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-lg p-6 text-center py-12">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  No Tasks Selected
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Select up to 7 tasks from the list below to start tracking
-                  your progress
-                </p>
-              </div>
-            )}
+            </div>
+          </>
+        ) : (
+          /* Global Progress Tab */
+          <div className="space-y-8">
+            <GlobalProgressDashboard />
           </div>
-
-          {/* Progress Dashboard Sidebar */}
-          <div className="lg:col-span-1">
-            <ProgressDashboard tasks={selectedTasks} />
-          </div>
-        </div>
-
-        {/* Available Tasks */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-            Available Tasks
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Select up to 7 tasks to track your progress
-          </p>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {TASK_LIST.map((task) => {
-              const isSelected = selectedTasks.some(
-                (t) => t.dayNumber === task.day
-              )
-              const isDisabled = !isSelected && selectedTasks.length >= 7
-
-              return (
-                <div
-                  key={task.day}
-                  className={`border rounded-lg p-4 transition-all ${
-                    isSelected
-                      ? 'border-blue-500 bg-blue-50'
-                      : isDisabled
-                      ? 'border-gray-200 bg-gray-50 opacity-60'
-                      : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-800">
-                      Day {task.day.toString().padStart(2, '0')}
-                    </h3>
-                    {isSelected && (
-                      <CheckCircle className="text-blue-500" size={20} />
-                    )}
-                  </div>
-                  <h4 className="font-medium text-gray-700 mb-2">
-                    {task.title}
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {task.description}
-                  </p>
-                  <button
-                    onClick={() => addTask(task.day)}
-                    disabled={isSelected || isDisabled}
-                    className={`w-full py-2 px-4 rounded-lg transition-colors ${
-                      isSelected
-                        ? 'bg-blue-100 text-blue-700 cursor-not-allowed'
-                        : isDisabled
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    {isSelected
-                      ? 'Selected'
-                      : isDisabled
-                      ? 'Max Tasks Reached'
-                      : 'Add Task'}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

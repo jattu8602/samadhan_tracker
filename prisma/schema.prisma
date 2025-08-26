@@ -39,3 +39,13 @@ model Task {
 
   @@unique([userId, dayNumber])
 }
+
+model GlobalProgress {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  dayNumber   Int      @unique
+  totalUsers  Int      @default(0)
+  completedUsers Int   @default(0)
+  inProgressUsers Int  @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
