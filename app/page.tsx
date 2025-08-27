@@ -399,12 +399,12 @@ export default function Home() {
                             <h3 className="font-semibold text-gray-800">
                               Day {task.dayNumber.toString().padStart(2, '0')}
                             </h3>
-                            <button
+                            {/* <button
                               onClick={() => removeTask(task.id)}
                               className="text-red-500 hover:text-red-700 p-1"
                             >
                               <Trash2 size={16} />
-                            </button>
+                            </button> */}
                           </div>
                           <h4 className="font-medium text-gray-700 mb-2">
                             {task.title}
